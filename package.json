@@ -10,5 +10,8 @@
   "main": "index.js",
   "repository": "git@github.com:submagr/Quick-Color.git",
   "author": "<deka108@gmail.com>",
-  "scripts": {}
+  "scripts": {
+    "start": "snowpack dev",
+    "build": "snowpack build"
+  }
 }
