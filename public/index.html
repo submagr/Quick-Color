@@ -1,35 +1,52 @@
 <!doctype html>
 <html>
-    <head>
-        <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
-        <link href="./style.css" rel="stylesheet">
-    </head>
-    <body>
-        <!-- upload image -->
-        <!-- display image -->
-        <!-- manipulate image image -->
-        <div class="container mx-auto my-5">
-            <div class="grid grid-cols-12 gap-4 my-5">
-                <div class="col-span-9 add-border my-5">
-                    <h2 class="my-5">Display</h2>
-                    <canvas id="img-canvas" height="500" width="750" class="padding-500">
-                    </canvas>
-                </div>
-                <div class="col-span-3 add-border my-5">
-                    <h2 class="my-5">Menus</h2>
-                    <input id='uploadImg' type='file' hidden accept="image/*"/>
-                    <button
-                        id='uploadBtn'
-                        type="button"
-                        class="border border-blue-500 bg-blue-500 text-white rounded-md px-4 py-2 m-2 transition duration-500 ease select-none hover:bg-blue-600 focus:outline-none focus:shadow-outline"
-                    >Upload an Image</button>
-                </div>
+  <head>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    <link href="/style.css" rel="stylesheet">
+  </head>
+  <body>
+    <!-- upload image -->
+    <!-- display image -->
+    <!-- manipulate image image -->
+    <div class="mx-auto my-5">
+      <div class="grid grid-cols-12 gap-4 my-5">
+        <div class="col-span-10 add-border my-5">
+          <h2 class="my-5">Display</h2>
+            <div class="grid grid-cols-8 gap-4 ">
+              <figure class="image col-span-6 flex justify-center">
+                <canvas id="img-canvas" height="500" width="750">
+                </canvas>
+              </figure>
+              <div id="hovered-color">
+                <h2>Hovered</h2>
+              </div>
+              <div id="selected-color">
+                <h2>Selected</h2>
+              </div>
             </div>
         </div>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js" integrity="sha512-/DXTXr6nQodMUiq+IUJYCt2PPOUjrHJ9wFrqpJ3XkgPNOZVfMok7cRw6CSxyCQxXn6ozlESsSh1/sMCTF1rL/g==" crossorigin="anonymous"></script>
-        <script src="./main.js" type="text/javascript"></script>
-    </body>
-    <footer>
+        <div class="col-span-2 add-border my-5">
+          <h2 class="my-5">Menus</h2>
+          <div class="flex flex-col">
+            <input id='upload-img' type='file' hidden accept="image/*"/>
+            <button
+              id='upload-btn'
+              type="button"
+              class="border border-blue-500 bg-blue-500 text-white rounded-md px-4 py-2 m-2 transition duration-500 ease select-none hover:bg-blue-600 focus:outline-none focus:shadow-outline"
+            >Upload an Image</button>
+            <button
+              id='segment-img'
+              type="button"
+              class="border border-blue-500 bg-blue-500 text-white rounded-md px-4 py-2 m-2 transition duration-500 ease select-none hover:bg-blue-600 focus:outline-none focus:shadow-outline"
+            >Segment an Image</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js" integrity="sha512-/DXTXr6nQodMUiq+IUJYCt2PPOUjrHJ9wFrqpJ3XkgPNOZVfMok7cRw6CSxyCQxXn6ozlESsSh1/sMCTF1rL/g==" crossorigin="anonymous"></script>
+    <script type="module" src="/main.js" type="text/javascript"></script>
+  </body>
+  <footer>
 
-    </footer>
+  </footer>
 </html>
