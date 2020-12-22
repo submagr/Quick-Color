@@ -4,14 +4,14 @@ import * as deeplab from '@tensorflow-models/deeplab';
 function handleImgUpload() {
     if (this.files && this.files[0]) {
         const imgID = `myImg`;
-        let img = document.querySelector(imgID);
+        let img = document.querySelector(`#${imgID}`);
         if (!img) {
             img = document.createElement("img");
             img.setAttribute("id", imgID);
             img.setAttribute("alt", "user uploaded img");
             img.setAttribute("height", 400);
-            img.setAttribute("width", 400);
-            document.body.appendChild(img);
+            const uploadedImgDiv = document.querySelector("#uploadedImage");
+            uploadedImgDiv.appendChild(img);
         }
         img.src = URL.createObjectURL(this.files[0]);
 
@@ -67,8 +67,6 @@ const displaySegmentationMap = (deeplabOutput) => {
     const ctx = canvas.getContext('2d');
 
     const segmentationMapData = new ImageData(segmentationMap, width, height);
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
     canvas.width = width;
     canvas.height = height;
     ctx.putImageData(segmentationMapData, 0, 0);

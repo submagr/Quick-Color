@@ -4,12 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick-Color</title>
+    <style>
+        body {
+            background-color: #5cdb95;
+        }
+        .mydiv {
+            border: solid #05386b;
+            margin-bottom: 10px;
+            padding: 10px;
+            color: #05386b;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <label for="imgInput">Upload Image: </label>
-    <input type="file" value="Upload Image"/>
+    <div class="mydiv">
+        <h1 style="color:#edf5e1;">
+            <i>Quick Color</i>
+        </h1>
+    </div>
 
-    <canvas id="output-image"></canvas>
-    <br>
+    <div class="mydiv" id="uploadedImage">
+        <h4>
+            <label for="imgInput">Upload image</label>
+            <input name="imgInput" type="file" value="Upload Image"/>
+        </h4>
+    </div>
+
+    <div class="mydiv" id="segmentedImage">
+        <canvas id="output-image"></canvas>
+    </div>
 </body>
 </html>
