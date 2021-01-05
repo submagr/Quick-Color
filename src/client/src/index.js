@@ -1,4 +1,3 @@
-import * as tf from '@tensorflow/tfjs-core';
 import * as deeplab from '@tensorflow-models/deeplab';
 
 function handleImgUpload() {
@@ -19,6 +18,23 @@ function handleImgUpload() {
     }
 }
 
+function getUploadedImage() {
+    let promise = new Promise(function(resolve, reject) {
+        const input = document.getElementById('myImg');
+        if (!input.src || !input.src.length || input.src.length === 0) {
+            reject(new Error("Img src is not present"));
+        }
+        if (input.complete && input.naturalHeight !== 0) {
+            resolve(input);
+        } else {
+            input.onload = () => {
+                resolve(input);
+            };
+        }
+    });
+    return promise;
+}
+
 const modelName = `ade20k`;
 let deeplab_model;
 const runDeepLab = async () => {
@@ -33,18 +49,11 @@ const runDeepLab = async () => {
         console.log(`Loaded the model`)
     }
 
-    const input = document.getElementById('myImg');
-    if (!input.src || !input.src.length || input.src.length === 0) {
-      console.log('Failed! Please load an image first.');
-      return;
-    }
-    if (input.complete && input.naturalHeight !== 0) {
-        runPrediction(input);
-    } else {
-        input.onload = () => {
-            runPrediction(input);
-        };
-    }
+    getUploadedImage().then((img) => {
+        runPrediction(img);
+    }).catch((err) => {
+        console.log(err);
+    })
 }
 
 const runPrediction = (input) => {
@@ -70,7 +79,51 @@ const displaySegmentationMap = (deeplabOutput) => {
     canvas.width = width;
     canvas.height = height;
     ctx.putImageData(segmentationMapData, 0, 0);
+    overlayImage(legend, segmentationMapData);
 };
+
+function overlayImage(legend, segmentationMapData) {
+    // display original image first
+    var dispPromise = new Promise(function(resolve, reject) {
+        getUploadedImage()
+        .then((img) => {
+            const canvas = document.getElementById("overlay-image");
+            canvas.width = segmentationMapData.width;
+            canvas.height = segmentationMapData.height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, segmentationMapData.width, segmentationMapData.height);
+            resolve([canvas, ctx]);
+        })
+        .catch((err) => {
+            console.log(err);
+            reject(err);
+        })
+    });
+
+    dispPromise.then((args) => {
+        const canvas = args[0];
+        var ctx = args[1];
+        var imgData = ctx.getImageData(0, 0, canvas.scrollWidth, canvas.scrollHeight);
+        // get segmentation map 
+        for (var i=0; i<segmentationMapData.data.length / 4; i++) {
+            var r = segmentationMapData.data[i*4];
+            var g = segmentationMapData.data[i*4 + 1];
+            var b = segmentationMapData.data[i*4 + 2];
+            for (let [k, v] of Object.entries(legend)) {
+                if (k == "sofa" && v[0] == r && v[1] == g && v[2] == b) {
+                    imgData.data[i*4] = 255;
+                    imgData.data[i*4 + 1] = 0;
+                    imgData.data[i*4 + 2] = 0;
+                }
+            }
+        }
+        const canvas2 = document.getElementById('overlay-image');
+        const ctx2 = canvas2.getContext('2d');
+        canvas2.width = canvas.scrollWidth;
+        canvas2.height = canvas.scrollHeight;
+        ctx2.putImageData(imgData, 0, 0);
+    })
+}
 
 function onWindowLoad() {
     // Register Image Uplaod
