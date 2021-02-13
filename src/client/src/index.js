@@ -1,5 +1,15 @@
 import * as deeplab from '@tensorflow-models/deeplab';
 
+
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : null;
+}
+
 /** Source: https://gist.github.com/mjackson/5311256
  * Converts an RGB color value to HSL. Conversion formula
  * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
@@ -79,91 +89,6 @@ function hslToRgb(h, s, l) {
     return [r * 255, g * 255, b * 255];
 }
 
-/**
- * Converts an RGB color value to HSV. Conversion formula
- * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
- * Assumes r, g, and b are contained in the set [0, 255] and
- * returns h, s, and v in the set [0, 1].
- *
- * @param   Number  r       The red color value
- * @param   Number  g       The green color value
- * @param   Number  b       The blue color value
- * @return  Array           The HSV representation
- */
-function rgbToHsv(r, g, b) {
-    r /= 255, g /= 255, b /= 255;
-
-    var max = Math.max(r, g, b),
-        min = Math.min(r, g, b);
-    var h, s, v = max;
-
-    var d = max - min;
-    s = max == 0 ? 0 : d / max;
-
-    if (max == min) {
-        h = 0; // achromatic
-    } else {
-        switch (max) {
-            case r:
-                h = (g - b) / d + (g < b ? 6 : 0);
-                break;
-            case g:
-                h = (b - r) / d + 2;
-                break;
-            case b:
-                h = (r - g) / d + 4;
-                break;
-        }
-
-        h /= 6;
-    }
-
-    return [h, s, v];
-}
-
-/**
- * Converts an HSV color value to RGB. Conversion formula
- * adapted from http://en.wikipedia.org/wiki/HSV_color_space.
- * Assumes h, s, and v are contained in the set [0, 1] and
- * returns r, g, and b in the set [0, 255].
- *
- * @param   Number  h       The hue
- * @param   Number  s       The saturation
- * @param   Number  v       The value
- * @return  Array           The RGB representation
- */
-function hsvToRgb(h, s, v) {
-    var r, g, b;
-
-    var i = Math.floor(h * 6);
-    var f = h * 6 - i;
-    var p = v * (1 - s);
-    var q = v * (1 - f * s);
-    var t = v * (1 - (1 - f) * s);
-
-    switch (i % 6) {
-        case 0:
-            r = v, g = t, b = p;
-            break;
-        case 1:
-            r = q, g = v, b = p;
-            break;
-        case 2:
-            r = p, g = v, b = t;
-            break;
-        case 3:
-            r = p, g = q, b = v;
-            break;
-        case 4:
-            r = t, g = p, b = v;
-            break;
-        case 5:
-            r = v, g = p, b = q;
-            break;
-    }
-
-    return [r * 255, g * 255, b * 255];
-}
 
 function handleImgUpload() {
     if (this.files && this.files[0]) {
@@ -230,6 +155,9 @@ const runPrediction = (input) => {
     });
 };
 
+var segmentationMapData;
+var legendG;
+var origImgData;
 const displaySegmentationMap = (deeplabOutput) => {
     const {
         legend,
@@ -240,20 +168,12 @@ const displaySegmentationMap = (deeplabOutput) => {
     const canvas = document.getElementById('output-image');
     const ctx = canvas.getContext('2d');
 
-    const segmentationMapData = new ImageData(segmentationMap, width, height);
+    // XXX: Temporary hack to make these available later.
+    legendG = legend
+    segmentationMapData = new ImageData(segmentationMap, width, height);
     canvas.width = width;
     canvas.height = height;
     ctx.putImageData(segmentationMapData, 0, 0);
-    overlayImage(legend, segmentationMapData);
-};
-
-function myBlend(srcRGB, targetRGB) {
-    const [h, s, v] = rgbToHsv(srcRGB.r, srcRGB.g, srcRGB.b);
-    const [rp, gp, bp] = hsvToRgb(Math.min(1, h + 25/360), Math.min(1, s + 0.3), Math.min(1, v + 0.1));
-    return {"r": rp, "g": gp, "b": bp};
-}
-
-function overlayImage(legend, segmentationMapData) {
     // display original image first
     var dispPromise = new Promise(function(resolve, reject) {
         getUploadedImage()
@@ -263,44 +183,64 @@ function overlayImage(legend, segmentationMapData) {
             canvas.height = segmentationMapData.height;
             var ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0, segmentationMapData.width, segmentationMapData.height);
-            resolve([canvas, ctx]);
+            resolve();
         })
         .catch((err) => {
             console.log(err);
             reject(err);
         })
     });
+    dispPromise.then(overlayImage);
+};
 
-    dispPromise.then((args) => {
-        const canvas = args[0];
-        var ctx = args[1];
-        var imgData = ctx.getImageData(0, 0, canvas.scrollWidth, canvas.scrollHeight);
-        // get segmentation map 
-        for (var i=0; i<segmentationMapData.data.length / 4; i++) {
-            var r = segmentationMapData.data[i*4];
-            var g = segmentationMapData.data[i*4 + 1];
-            var b = segmentationMapData.data[i*4 + 2];
-            for (let [k, v] of Object.entries(legend)) {
-                if (k == "sofa" && v[0] == r && v[1] == g && v[2] == b) {
-                    const srcRGB = {
-                        "r": imgData.data[i * 4],
-                        "g": imgData.data[i * 4 + 1],
-                        "b": imgData.data[i * 4 + 2]
-                    };
-                    const targetRGB = {"r": 255, "g": 0, "b": 0};
-                    let blendColor = myBlend(srcRGB, targetRGB);
-                    imgData.data[i*4] = blendColor.r;
-                    imgData.data[i*4 + 1] = blendColor.g;
-                    imgData.data[i*4 + 2] = blendColor.b;
-                }
+function getPCValue(curr, pc) {
+    let new_curr;
+    if (pc < 0) {
+        new_curr = curr + pc * curr;
+    } else {
+        new_curr = curr + pc * (1 - curr);
+    }
+    return new_curr
+}
+
+function overlayImage() {
+    const dstRGB = hexToRgb(document.querySelector("#dstH").value);
+    const dstHSL = rgbToHsl(dstRGB.r, dstRGB.g, dstRGB.b);
+    const dstLPC = parseFloat(document.querySelector("#dstLPC").value) / 100 // dst lightness percentage change
+    const dstSPC = parseFloat(document.querySelector("#dstSPC").value) / 100 // dst lightness percentage change
+
+    const canvas = document.getElementById("overlay-image");
+    var ctx = canvas.getContext("2d");
+    if (origImgData == undefined) {
+        origImgData = ctx.getImageData(0, 0, canvas.scrollWidth, canvas.scrollHeight);
+    }
+
+    let data = new Uint8ClampedArray(origImgData.data)
+    let imgData = new ImageData(data, origImgData.width, origImgData.height);
+    for (var i=0; i<segmentationMapData.data.length / 4; i++) {
+        var r = segmentationMapData.data[i*4];
+        var g = segmentationMapData.data[i*4 + 1];
+        var b = segmentationMapData.data[i*4 + 2];
+        for (let [k, v] of Object.entries(legendG)) {
+            if (k == "sofa" && v[0] == r && v[1] == g && v[2] == b) {
+                const srcRGB = {
+                    "r": origImgData.data[i * 4],
+                    "g": origImgData.data[i * 4 + 1],
+                    "b": origImgData.data[i * 4 + 2]
+                };
+                let srcHSL = rgbToHsl(srcRGB.r, srcRGB.g, srcRGB.b);
+                let blendColor = hslToRgb(dstHSL[0], getPCValue(srcHSL[1], dstSPC), getPCValue(srcHSL[2], dstLPC));
+                imgData.data[i*4] = blendColor[0];
+                imgData.data[i*4 + 1] = blendColor[1];
+                imgData.data[i*4 + 2] = blendColor[2];
             }
         }
-        const canvas2 = document.getElementById('overlay-image');
-        const ctx2 = canvas2.getContext('2d');
-        canvas2.width = canvas.scrollWidth;
-        canvas2.height = canvas.scrollHeight;
-        ctx2.putImageData(imgData, 0, 0);
-    })
+    }
+    const canvas2 = document.getElementById('overlay-image');
+    const ctx2 = canvas2.getContext('2d');
+    canvas2.width = canvas.scrollWidth;
+    canvas2.height = canvas.scrollHeight;
+    ctx2.putImageData(imgData, 0, 0);
 }
 
 function onWindowLoad() {
@@ -310,6 +250,19 @@ function onWindowLoad() {
         inputEl.addEventListener("change", handleImgUpload);
     } else {
         console.error("Couldn't find input type file element for image upload");
+    }
+
+    const colorPickerEl = document.querySelector(`#dstH`)
+    if (colorPickerEl) {
+        colorPickerEl.addEventListener("change", overlayImage);
+    }
+    const dstSPC = document.querySelector(`#dstSPC`)
+    if (dstSPC) {
+        dstSPC.addEventListener("change", overlayImage);
+    }
+    const dstLPC = document.querySelector(`#dstLPC`)
+    if (dstLPC) {
+        dstLPC.addEventListener("change", overlayImage);
     }
 }
 window.addEventListener(`load`, onWindowLoad);

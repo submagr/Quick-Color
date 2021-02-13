@@ -10,7 +10,7 @@ For live demo, please visit [Quick-Color](https://submagr.github.io/Quick-Color)
 ### TODO:
 * [] User should be able to select various segment
 * [] User should be able to download the final image
-* [] Blend colors
+* [x] Blend colors
 * [] Replace category mask prediction using Deeplab-V3 with more general object selection algorithm
 
 ### Contributing
